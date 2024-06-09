@@ -184,15 +184,17 @@ public class InteractableAdder : MonoBehaviour
 
     private void AdjustBoundsClipperSize(GameObject surfaceInstance, GameObject targetGameObject)
     {
-        Renderer targetRenderer = targetGameObject.GetComponent<Renderer>();
-        if (targetRenderer != null)
+        BoxCollider targetCollider = targetGameObject.GetComponent<BoxCollider>();
+        if (targetCollider != null)
         {
-            Vector3 targetSize = targetRenderer.bounds.size;
+            Vector3 targetSize = targetCollider.size;
+            Vector3 targetCenter = targetCollider.center;
 
             BoundsClipper boundsClipper = surfaceInstance.GetComponent<BoundsClipper>();
             if (boundsClipper != null)
             {
                 boundsClipper.Size = new Vector3(targetSize.x, targetSize.y, targetSize.z);
+                boundsClipper.transform.position = targetGameObject.transform.position + targetCenter;
             }
             else
             {
@@ -201,9 +203,11 @@ public class InteractableAdder : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Target GameObject does not have a Renderer component.");
+            Debug.LogWarning("Target GameObject does not have a BoxCollider component.");
         }
     }
+
+
 
     #endregion
 }

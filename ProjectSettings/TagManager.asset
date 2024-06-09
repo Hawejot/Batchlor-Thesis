@@ -5,6 +5,18 @@ TagManager:
   serializedVersion: 2
   tags:
   - UI
+  - Conv
+  - Dense
+  - Dropout
+  - Pooling
+  - Flatten
+  - Sigmoid
+  - ReLu
+  - Softmax
+  - Reshape
+  - UpSampling
+  - Concatenate
+  - Def
   layers:
   - Default
   - TransparentFX
