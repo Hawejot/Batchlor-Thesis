@@ -11,10 +11,51 @@ public class InteractableAdder : MonoBehaviour
 
     private Action onSelectAction;
 
+    private Action onHoverAction;
+
     // Function to add both interactables to a GameObject
     public void AddInteractables(GameObject targetGameObject, Action onSelect)
     {
         onSelectAction = onSelect;
+
+        PokeInteractable pokeInteractable = AddPokeInteractable(targetGameObject);
+        RayInteractable rayInteractable = AddRayInteractable(targetGameObject);
+
+        // Add the Surface prefab as a child to the target GameObject
+        if (surfacePrefab != null)
+        {
+            GameObject surfaceInstance = Instantiate(surfacePrefab, targetGameObject.transform);
+            surfaceInstance.name = "Surface";
+
+            // Adjust the BoundsClipper size to match the target GameObject's size
+            AdjustBoundsClipperSize(surfaceInstance, targetGameObject);
+
+            // Inject the Surface into the interactables
+            ISurfacePatch surfacePatch = surfaceInstance.GetComponent<ISurfacePatch>();
+            if (surfacePatch != null)
+            {
+                InjectSurfacePatch(targetGameObject, surfacePatch);
+            }
+            else
+            {
+                Debug.LogError("Surface instance does not have a component that implements ISurfacePatch.");
+            }
+        }
+        else
+        {
+            Debug.LogError("Surface prefab is not assigned in the InteractableAdder script.");
+        }
+
+        // Add the UnityEvent wrappers
+        AddInteractableUnityEventWrapper(targetGameObject, pokeInteractable);
+        AddInteractableUnityEventWrapper(targetGameObject, rayInteractable);
+    }
+
+    public void AddInteractables(GameObject targetGameObject, Action onSelect, Action onHover)
+    {
+        onSelectAction = onSelect;
+
+        onHoverAction = onHover;
 
         PokeInteractable pokeInteractable = AddPokeInteractable(targetGameObject);
         RayInteractable rayInteractable = AddRayInteractable(targetGameObject);
@@ -163,6 +204,15 @@ public class InteractableAdder : MonoBehaviour
         {
             Debug.Log("Interactable selected, but no action was provided.");
         }
+
+        if (onHoverAction != null) {
+            onHoverAction();
+        }
+        else
+        {
+            Debug.Log("Interactable hovered, but no action was provided.");
+        }
+
     }
 
     #region Surface

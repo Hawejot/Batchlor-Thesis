@@ -17,6 +17,7 @@ TagManager:
   - UpSampling
   - Concatenate
   - Def
+  - Content
   layers:
   - Default
   - TransparentFX
