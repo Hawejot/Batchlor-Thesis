@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7732864474421789715}
   - component: {fileID: 2015093937786212798}
   m_Layer: 5
-  m_Name: RawImage
+  m_Name: UI_Learningstation
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

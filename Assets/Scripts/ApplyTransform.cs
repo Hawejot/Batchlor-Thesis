@@ -6,7 +6,7 @@ public class ApplyTransform : MonoBehaviour
     public GameObject Object1;
     public GameObject Object2;
     public float XShift = 0;
-    public float YShift  = 0;
+    public float YShift = 0;
     public float ZShift = 0;
 
 

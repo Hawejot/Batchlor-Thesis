@@ -3,73 +3,65 @@ using UnityEngine.Events;
 using Oculus.Interaction;
 using Oculus.Interaction.Surfaces;
 using System;
-using System.Collections;
 
+/// <summary>
+/// Class responsible for adding interactables to a GameObject.
+/// </summary>
 public class InteractableAdder : MonoBehaviour
 {
-    public GameObject surfacePrefab; // Assign the Surface prefab in the Inspector
+    /// <summary>
+    /// Prefab for the surface to be assigned in the Inspector.
+    /// </summary>
+    public GameObject surfacePrefab;
 
-    private Action onSelectAction;
+    #region Public Methods
 
-    private Action onHoverAction;
-
-    // Function to add both interactables to a GameObject
+    /// <summary>
+    /// Adds interactables to a GameObject with a select action.
+    /// </summary>
+    /// <param name="targetGameObject">The target GameObject.</param>
+    /// <param name="onSelect">Action to be called on select.</param>
     public void AddInteractables(GameObject targetGameObject, Action onSelect)
     {
-        onSelectAction = onSelect;
-
-        PokeInteractable pokeInteractable = AddPokeInteractable(targetGameObject);
-        RayInteractable rayInteractable = AddRayInteractable(targetGameObject);
-
-        // Add the Surface prefab as a child to the target GameObject
-        if (surfacePrefab != null)
-        {
-            GameObject surfaceInstance = Instantiate(surfacePrefab, targetGameObject.transform);
-            surfaceInstance.name = "Surface";
-
-            // Adjust the BoundsClipper size to match the target GameObject's size
-            AdjustBoundsClipperSize(surfaceInstance, targetGameObject);
-
-            // Inject the Surface into the interactables
-            ISurfacePatch surfacePatch = surfaceInstance.GetComponent<ISurfacePatch>();
-            if (surfacePatch != null)
-            {
-                InjectSurfacePatch(targetGameObject, surfacePatch);
-            }
-            else
-            {
-                Debug.LogError("Surface instance does not have a component that implements ISurfacePatch.");
-            }
-        }
-        else
-        {
-            Debug.LogError("Surface prefab is not assigned in the InteractableAdder script.");
-        }
-
-        // Add the UnityEvent wrappers
-        AddInteractableUnityEventWrapper(targetGameObject, pokeInteractable);
-        AddInteractableUnityEventWrapper(targetGameObject, rayInteractable);
+        AddInteractables(targetGameObject, onSelect, null, null);
     }
 
+    /// <summary>
+    /// Adds interactables to a GameObject with select and hover actions.
+    /// </summary>
+    /// <param name="targetGameObject">The target GameObject.</param>
+    /// <param name="onSelect">Action to be called on select.</param>
+    /// <param name="onHover">Action to be called on hover.</param>
     public void AddInteractables(GameObject targetGameObject, Action onSelect, Action onHover)
     {
-        onSelectAction = onSelect;
+        AddInteractables(targetGameObject, onSelect, onHover, null);
+    }
 
-        onHoverAction = onHover;
+    /// <summary>
+    /// Adds interactables to a GameObject with select, hover, and unhover actions.
+    /// </summary>
+    /// <param name="targetGameObject">The target GameObject.</param>
+    /// <param name="onSelectAction">Action to be called on select.</param>
+    /// <param name="onHoverAction">Action to be called on hover.</param>
+    /// <param name="onUnhoverAction">Action to be called on unhover.</param>
+    public void AddInteractables(GameObject targetGameObject, Action onSelectAction, Action onHoverAction, Action onUnhoverAction)
+    {
+        Debug.Log($"Adding interactables to: {targetGameObject.name}");
 
+        // Create and add poke interactable
         PokeInteractable pokeInteractable = AddPokeInteractable(targetGameObject);
+
+        // Create and add ray interactable
         RayInteractable rayInteractable = AddRayInteractable(targetGameObject);
 
-        // Add the Surface prefab as a child to the target GameObject
+        // Instantiate and configure the surface prefab
         if (surfacePrefab != null)
         {
             GameObject surfaceInstance = Instantiate(surfacePrefab, targetGameObject.transform);
             surfaceInstance.name = "Surface";
 
-            // Adjust the BoundsClipper size to match the target GameObject's size
             AdjustBoundsClipperSize(surfaceInstance, targetGameObject);
 
-            // Inject the Surface into the interactables
             ISurfacePatch surfacePatch = surfaceInstance.GetComponent<ISurfacePatch>();
             if (surfacePatch != null)
             {
@@ -85,13 +77,20 @@ public class InteractableAdder : MonoBehaviour
             Debug.LogError("Surface prefab is not assigned in the InteractableAdder script.");
         }
 
-        // Add the UnityEvent wrappers
-        AddInteractableUnityEventWrapper(targetGameObject, pokeInteractable);
-        AddInteractableUnityEventWrapper(targetGameObject, rayInteractable);
+        // Add UnityEvent wrappers to handle interactions
+        AddInteractableUnityEventWrapper(targetGameObject, pokeInteractable, onSelectAction, onHoverAction, onUnhoverAction);
+        AddInteractableUnityEventWrapper(targetGameObject, rayInteractable, onSelectAction, onHoverAction, onUnhoverAction);
     }
+
+    #endregion
 
     #region AddInteractables
 
+    /// <summary>
+    /// Adds a PokeInteractable to the target GameObject.
+    /// </summary>
+    /// <param name="targetGameObject">The target GameObject.</param>
+    /// <returns>The added PokeInteractable component.</returns>
     private PokeInteractable AddPokeInteractable(GameObject targetGameObject)
     {
         PokeInteractable pokeInteractable = targetGameObject.GetComponent<PokeInteractable>();
@@ -107,6 +106,11 @@ public class InteractableAdder : MonoBehaviour
         return pokeInteractable;
     }
 
+    /// <summary>
+    /// Adds a RayInteractable to the target GameObject.
+    /// </summary>
+    /// <param name="targetGameObject">The target GameObject.</param>
+    /// <returns>The added RayInteractable component.</returns>
     private RayInteractable AddRayInteractable(GameObject targetGameObject)
     {
         RayInteractable rayInteractable = targetGameObject.GetComponent<RayInteractable>();
@@ -124,7 +128,17 @@ public class InteractableAdder : MonoBehaviour
 
     #endregion
 
-    private void AddInteractableUnityEventWrapper(GameObject targetGameObject, IInteractableView interactableView)
+    #region Interaction Logic
+
+    /// <summary>
+    /// Adds a UnityEvent wrapper to handle interactable events.
+    /// </summary>
+    /// <param name="targetGameObject">The target GameObject.</param>
+    /// <param name="interactableView">The interactable view.</param>
+    /// <param name="onSelect">Action to be called on select.</param>
+    /// <param name="onHover">Action to be called on hover.</param>
+    /// <param name="onUnhover">Action to be called on unhover.</param>
+    private void AddInteractableUnityEventWrapper(GameObject targetGameObject, IInteractableView interactableView, Action onSelect, Action onHover, Action onUnhover)
     {
         if (targetGameObject == null)
         {
@@ -140,7 +154,6 @@ public class InteractableAdder : MonoBehaviour
         }
         Debug.Log("Added InteractableUnityEventWrapper component.");
 
-        // Ensure UnityEvents are initialized
         InitializeUnityEvents(eventWrapper);
 
         eventWrapper.InjectAllInteractableUnityEventWrapper(interactableView);
@@ -152,12 +165,29 @@ public class InteractableAdder : MonoBehaviour
             Debug.LogError("whenSelect is null.");
             return;
         }
-        Debug.Log("Retrieved WhenSelect event.");
+        whenSelect.AddListener(() => OnInteractionSelect(onSelect));
 
-        whenSelect.AddListener(OnInteractableSelected);
-        Debug.Log("Added event listener for WhenSelect event.");
+        UnityEvent whenHover = eventWrapper.WhenHover;
+        if (whenHover == null)
+        {
+            Debug.LogError("whenHover is null.");
+            return;
+        }
+        whenHover.AddListener(() => OnInteractionHover(onHover));
+
+        UnityEvent whenUnhover = eventWrapper.WhenUnhover;
+        if (whenUnhover == null)
+        {
+            Debug.LogError("whenUnhover is null.");
+            return;
+        }
+        whenUnhover.AddListener(() => OnInteractionUnhover(onUnhover));
     }
 
+    /// <summary>
+    /// Initializes UnityEvents in the event wrapper.
+    /// </summary>
+    /// <param name="eventWrapper">The event wrapper to initialize.</param>
     void InitializeUnityEvents(InteractableUnityEventWrapper eventWrapper)
     {
         if (eventWrapper.WhenHover == null)
@@ -194,29 +224,63 @@ public class InteractableAdder : MonoBehaviour
         }
     }
 
-    private void OnInteractableSelected()
+    /// <summary>
+    /// Called when the interactable is selected.
+    /// </summary>
+    /// <param name="onSelection">The action to be called on selection.</param>
+    private void OnInteractionSelect(Action onSelection)
     {
-        if (onSelectAction != null)
+        if (onSelection != null)
         {
-            onSelectAction();
+            onSelection();
         }
         else
         {
             Debug.Log("Interactable selected, but no action was provided.");
         }
+    }
 
-        if (onHoverAction != null) {
+    /// <summary>
+    /// Called when the interactable is hovered.
+    /// </summary>
+    /// <param name="onHoverAction">The action to be called on hover.</param>
+    private void OnInteractionHover(Action onHoverAction)
+    {
+        if (onHoverAction != null)
+        {
             onHoverAction();
         }
         else
         {
             Debug.Log("Interactable hovered, but no action was provided.");
         }
-
     }
+
+    /// <summary>
+    /// Called when the interactable is unhovered.
+    /// </summary>
+    /// <param name="onUnhoverAction">The action to be called on unhover.</param>
+    private void OnInteractionUnhover(Action onUnhoverAction)
+    {
+        if (onUnhoverAction != null)
+        {
+            onUnhoverAction();
+        }
+        else
+        {
+            Debug.Log("Interactable unhovered, but no action was provided.");
+        }
+    }
+
+    #endregion
 
     #region Surface
 
+    /// <summary>
+    /// Injects a surface patch into the target GameObject's interactables.
+    /// </summary>
+    /// <param name="targetGameObject">The target GameObject.</param>
+    /// <param name="surfacePatch">The surface patch to inject.</param>
     private void InjectSurfacePatch(GameObject targetGameObject, ISurfacePatch surfacePatch)
     {
         PokeInteractable pokeInteractable = targetGameObject.GetComponent<PokeInteractable>();
@@ -232,6 +296,11 @@ public class InteractableAdder : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Adjusts the size of the BoundsClipper to match the target GameObject's size.
+    /// </summary>
+    /// <param name="surfaceInstance">The surface instance.</param>
+    /// <param name="targetGameObject">The target GameObject.</param>
     private void AdjustBoundsClipperSize(GameObject surfaceInstance, GameObject targetGameObject)
     {
         BoxCollider targetCollider = targetGameObject.GetComponent<BoxCollider>();
@@ -256,8 +325,6 @@ public class InteractableAdder : MonoBehaviour
             Debug.LogWarning("Target GameObject does not have a BoxCollider component.");
         }
     }
-
-
 
     #endregion
 }
