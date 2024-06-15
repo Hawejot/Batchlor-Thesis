@@ -1,16 +1,18 @@
 using UnityEngine;
 using Oculus.Interaction;
 
-
 public class PlayerMovement : MonoBehaviour
 {
     public float speed = 10.0f; // Speed of the player's movement
 
     public GameObject ground; // Reference to the ground GameObject
 
+    public Transform playerOrientation; // Reference to the player's orientation
+
     private Transform playerTransform; // Reference to the Player GameObject's Transform
     private ControllerAxis2D rightControllerAxis; // Reference to the ControllerAxis2D script
     private Collider groundCollider; // Reference to the ground's collider
+    private float initialY; // To store the initial Y position of the player
 
     void Start()
     {
@@ -25,6 +27,12 @@ public class PlayerMovement : MonoBehaviour
 
         // Get the Collider component attached to the ground GameObject
         groundCollider = ground.GetComponent<Collider>();
+
+        // Store the initial Y position of the player
+        if (playerTransform != null)
+        {
+            initialY = playerTransform.position.y;
+        }
 
         // Check if the required components are found
         if (playerTransform == null)
@@ -56,15 +64,19 @@ public class PlayerMovement : MonoBehaviour
         Vector2 inputAxis = rightControllerAxis.Value();
 
         // Convert the 2D input into a 3D movement vector
-        Vector3 move = new Vector3(inputAxis[0], 0, inputAxis[1]);
+        Vector3 move = new Vector3(inputAxis.x, 0, inputAxis.y);
 
         // Transform the movement vector to align with the player's orientation
-        move = playerTransform.TransformDirection(move);
+        move = playerOrientation.TransformDirection(move);
 
         // Calculate the potential new position
         Vector3 potentialNewPosition = playerTransform.position + move * Time.deltaTime * speed;
 
-        //Debug.Log(potentialNewPosition);
+        // Preserve the initial Y position
+        potentialNewPosition.y = initialY;
+
+        // Debug the potential new position
+        // Debug.Log(potentialNewPosition);
 
         if (IsPositionOnGround(potentialNewPosition))
         {
@@ -74,7 +86,6 @@ public class PlayerMovement : MonoBehaviour
 
     bool IsPositionOnGround(Vector3 position)
     {
-
         // Get the bounds of the ground collider
         Bounds groundBounds = groundCollider.bounds;
 

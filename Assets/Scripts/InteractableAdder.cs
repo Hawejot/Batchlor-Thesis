@@ -312,7 +312,7 @@ public class InteractableAdder : MonoBehaviour
             BoundsClipper boundsClipper = surfaceInstance.GetComponent<BoundsClipper>();
             if (boundsClipper != null)
             {
-                boundsClipper.Size = new Vector3(targetSize.x, targetSize.y, targetSize.z);
+                boundsClipper.Size = new Vector3(targetSize.x+0.1f, targetSize.y+0.1f, targetSize.z+0.1f);
                 boundsClipper.transform.position = targetGameObject.transform.position + targetCenter;
             }
             else
