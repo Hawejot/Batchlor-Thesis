@@ -21,6 +21,9 @@ public class MainController : MonoBehaviour
     public ApiDataFetcher apiDataFetcher;
     public ModelBuilder modelBuilder;
 
+    public ModelSpawner modelspawner;
+    public bool useModelSpawner = false;
+
     void Start()
     {
         Debug.Log("Start method called.");
@@ -67,7 +70,16 @@ public class MainController : MonoBehaviour
     void OnSuccess(ApiDataFetcher.LayerInfoList layerInfoList)
     {
         Debug.Log("OnSuccess callback called with layer info.");
-        modelBuilder.InstantiateLayers(layerInfoList.layers);
+
+        if (useModelSpawner)
+        {
+            modelspawner.SpawnModel (layerInfoList.layers);
+        }
+        else
+        {
+            modelBuilder.InstantiateLayers(layerInfoList.layers);
+        }
+        
         Debug.Log("Layers instantiated successfully.");
     }
 

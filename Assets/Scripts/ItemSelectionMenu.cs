@@ -1,12 +1,8 @@
 // ItemSelectionMenu.cs
-// This script handles the UI for item selection and interaction in an AR environment.
-// It populates a scroll view with items, manages hover effects, and handles item placement.
-// Dependencies: UnityEngine, UnityEngine.UI, System.Collections
-
-using UnityEngine;
-using UnityEngine.UI;
 using System.Collections;
 using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Handles the UI for item selection and interaction in an AR environment.
@@ -16,70 +12,59 @@ public class ItemSelectionMenu : MonoBehaviour
     /// <summary>
     /// Prefab for the RawImage to display item textures.
     /// </summary>
-    public GameObject RawImagePrefab;
+    [Tooltip("Prefab for the RawImage to display item textures.")]
+    public GameObject rawImagePrefab;
 
     /// <summary>
     /// Transform where the RawImage items will be instantiated.
     /// </summary>
-    public Transform ContentTransform;
+    [Tooltip("Transform where the RawImage items will be instantiated.")]
+    public Transform contentTransform;
 
     /// <summary>
     /// Reference to the camera rig for positioning hover items.
     /// </summary>
-    public GameObject CameraRig;
+    [Tooltip("Reference to the camera rig for positioning hover items.")]
+    public GameObject cameraRig;
+
+    /// <summary>
+    /// Reference to the nearest spawn position component.
+    /// </summary>
+    [Tooltip("Reference to the nearest spawn position component.")]
+    public NearestSpawnPosition nearestSpawnPosition;
 
     /// <summary>
     /// Array of textures representing the items.
     /// </summary>
-    public Texture[] ItemTextures;
+    [Tooltip("Array of textures representing the items.")]
+    public Texture[] itemTextures;
 
     /// <summary>
     /// Array of prefabs corresponding to the items to be placed in the AR world.
     /// </summary>
-    public GameObject[] ItemPrefabs;
+    [Tooltip("Array of prefabs corresponding to the items to be placed in the AR world.")]
+    public GameObject[] itemPrefabs;
 
-    /// <summary>
-    /// Reference to the InteractableAdder component.
-    /// </summary>
     private InteractableAdder _interactableAdder;
-
-    /// <summary>
-    /// Currently selected prefab.
-    /// </summary>
-    private GameObject _selectedPrefab;
-
-    /// <summary>
-    /// Instance of the currently hovered prefab.
-    /// </summary>
-    private GameObject _hoverInstance;
-
-    /// <summary>
-    /// Coroutine for managing hover movement.
-    /// </summary>
-    private Coroutine _hoverCoroutine;
-
-    /// <summary>
-    /// Timestamp of the last hover event.
-    /// </summary>
-    private float _lastHoverTime;
-
-    /// <summary>
-    /// Cooldown period between hover events.
-    /// </summary>
-    private const float HoverCooldown = 1f;
+    private ItemHoverHandler _hoverHandler;
+    private ItemSelectHandler _selectHandler;
 
     /// <summary>
     /// Initializes the InteractableAdder component and populates the scroll view with items.
     /// </summary>
     void Start()
     {
-        // Get the InteractableAdder component attached to the same GameObject
+        // Get the InteractableAdder component attached to the GameObject
         _interactableAdder = GetComponent<InteractableAdder>();
         if (_interactableAdder == null)
         {
             Debug.LogError("InteractableAdder component not found on the GameObject.");
             return;
         }
+
+        // Initialize hover and select handlers
+        _hoverHandler = new ItemHoverHandler(cameraRig, nearestSpawnPosition);
+        _selectHandler = new ItemSelectHandler(nearestSpawnPosition);
 
         // Populate the scroll view with items
         PopulateScrollView();
@@ -90,23 +75,24 @@ public class ItemSelectionMenu : MonoBehaviour
     /// </summary>
     void PopulateScrollView()
     {
-        // Create an array of indices
-        int[] arr = Enumerable.Range(0, ItemTextures.Length).ToArray();
+        // Create an array of indices based on the length of itemTextures
+        int[] indices = Enumerable.Range(0, itemTextures.Length).ToArray();
 
-        for (int i = 0; i < ItemTextures.Length; i++)
+        // Iterate through each texture and create a UI item for it
+        for (int i = 0; i < itemTextures.Length; i++)
         {
             // Instantiate a new RawImage item and set its texture
-            GameObject newItem = Instantiate(RawImagePrefab, ContentTransform);
-            newItem.GetComponentInChildren<RawImage>().texture = ItemTextures[i];
+            GameObject newItem = Instantiate(rawImagePrefab, contentTransform);
+            newItem.GetComponentInChildren<RawImage>().texture = itemTextures[i];
 
-            int index = arr[i]; // Capture the index from the array
+            // Store the current index for use in the callback
+            int index = indices[i];
 
-            // Add interactables to the new item
+            // Add interaction callbacks for hover and selection
             _interactableAdder.AddInteractables(newItem, () => OnItemSelect(index), () => OnItemHover(index));
         }
 
-        // Test: Log the size of the array
-        Debug.Log("Array size: " + arr.Length);
+        Debug.Log("Array size: " + indices.Length);
     }
 
     /// <summary>
@@ -115,59 +101,7 @@ public class ItemSelectionMenu : MonoBehaviour
     /// <param name="index">Index of the hovered item.</param>
     void OnItemHover(int index)
     {
-        // Check if the cooldown period has elapsed
-        if (Time.time - _lastHoverTime < HoverCooldown)
-        {
-            Debug.Log("Hover event ignored due to cooldown.");
-            return;
-        }
-
-        // Update the last hover time
-        _lastHoverTime = Time.time;
-
-        // Destroy any existing hover instance
-        DestroyHoverInstance();
-
-        // Instantiate a new hover instance
-        _selectedPrefab = ItemPrefabs[index];
-        _hoverInstance = Instantiate(_selectedPrefab);
-        _hoverInstance.transform.position = CameraRig.transform.position + CameraRig.transform.forward * 2f;
-        SetHoverMode(_hoverInstance, true);
-        Debug.Log("Hovering Item: " + ItemTextures[index].name);
-
-        // Start the hover movement coroutine
-        _hoverCoroutine = StartCoroutine(HoverMovementCoroutine());
-    }
-
-    /// <summary>
-    /// Destroys the current hover instance and stops the hover coroutine.
-    /// </summary>
-    private void DestroyHoverInstance()
-    {
-        if (_hoverCoroutine != null)
-        {
-            StopCoroutine(_hoverCoroutine);
-            _hoverCoroutine = null;
-        }
-        if (_hoverInstance != null)
-        {
-            Destroy(_hoverInstance);
-            _hoverInstance = null;
-        }
-    }
-
-    /// <summary>
-    /// Coroutine to manage the movement of the hover instance.
-    /// </summary>
-    /// <returns>An IEnumerator for the coroutine.</returns>
-    private IEnumerator HoverMovementCoroutine()
-    {
-        while (_hoverInstance != null)
-        {
-            // Update the hover instance position to follow the camera
-            _hoverInstance.transform.position = CameraRig.transform.position + CameraRig.transform.forward * 2f;
-            yield return null;
-        }
+        _hoverHandler.HandleItemHover(itemPrefabs[index], itemTextures[index].name);
     }
 
     /// <summary>
@@ -176,38 +110,7 @@ public class ItemSelectionMenu : MonoBehaviour
     /// <param name="index">Index of the selected item.</param>
     void OnItemSelect(int index)
     {
-        if (_hoverInstance != null)
-        {
-            // Place the hover instance in the AR world
-            GameObject placedInstance = _hoverInstance;
-            _hoverInstance = null;
-
-            // Set the placed instance to its final state
-            SetHoverMode(placedInstance, false);
-
-            // Add interactables to the placed instance
-            _interactableAdder.AddInteractables(placedInstance, () => Debug.Log("Object Selected"));
-            Debug.Log("Placed Item: " + ItemTextures[index].name);
-
-            // Destroy any remaining hover instance
-            DestroyHoverInstance();
-        }
-    }
-
-    /// <summary>
-    /// Sets the hover mode for an object, making it semi-transparent if hovering.
-    /// </summary>
-    /// <param name="obj">The object to set hover mode on.</param>
-    /// <param name="isHovering">Whether the object is in hover mode.</param>
-    void SetHoverMode(GameObject obj, bool isHovering)
-    {
-        // Set the transparency of the object's renderers
-        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
-        foreach (Renderer renderer in renderers)
-        {
-            Color color = renderer.material.color;
-            color.a = isHovering ? 0.5f : 1f;
-            renderer.material.color = color;
-        }
+        _hoverHandler.StopHover(); // Stop the hover effect
+        _selectHandler.HandleItemSelect(itemPrefabs[index], _hoverHandler.LastHoverPosition, itemTextures[index].name);
     }
 }

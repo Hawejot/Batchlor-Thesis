@@ -14,8 +14,20 @@ public class ApplyTransform : MonoBehaviour
     // Initialization method called once at the start
     void Start()
     {
+        // Check if Object1 is assigned
+        if (Object1 == null)
+        {
+            // Find the GameObject with the name "CentralEyeAnchor"
+            Object1 = GameObject.Find("CentralEyeAnchor");
+            if (Object1 == null)
+            {
+                Debug.LogError("CentralEyeAnchor not found in the scene.");
+                return; // Exit the method if CentralEyeAnchor is not found
+            }
+        }
+
         // Check if Object1 and Object2 are assigned
-        if (Object1 == null || Object2 == null)
+        if (Object2 == null)
         {
             Debug.LogWarning("Object1 or Object2 is not assigned.");
             return;
@@ -25,6 +37,8 @@ public class ApplyTransform : MonoBehaviour
     // Update method called once per frame
     void Update()
     {
+
+
         // Apply position from Object1 to Object2
         Object2.transform.position = Object1.transform.position;
 
@@ -34,7 +48,6 @@ public class ApplyTransform : MonoBehaviour
         // Apply rotation from Object1 to Object2
         Quaternion rotation = Object1.transform.rotation;
         Object2.transform.rotation = Quaternion.Euler(0, rotation.eulerAngles.y, 0);
-
     }
-
 }
+

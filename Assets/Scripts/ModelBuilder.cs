@@ -3,11 +3,9 @@ using UnityEngine;
 using TMPro;
 using Oculus.Interaction;
 using Oculus.Interaction.Surfaces;
-using System;
 
 public class ModelBuilder : MonoBehaviour
 {
-
     private float pixelToUnit = 0.04f;
     private GameObject annParent;
 
@@ -29,6 +27,11 @@ public class ModelBuilder : MonoBehaviour
 
     public GameObject surfacePrefab; // Assign the Surface prefab in the Inspector
 
+    private bool modelCreated = false;
+
+    // Add a public scale factor variable
+    public float scaleFactor = 1.0f;
+
     void Awake()
     {
         classToPrefab["Conv2D"] = Conv2DPrefab;
@@ -45,8 +48,10 @@ public class ModelBuilder : MonoBehaviour
     public void InstantiateLayers(ApiDataFetcher.LayerInfo[] layers)
     {
         float zPosition = 0f;
-        float spaceBetweenLayers = 1f;
+        float spaceBetweenLayers = 1f * scaleFactor;
         float annDepth = 0f;
+
+        modelCreated = false;
 
         if (annParent != null)
         {
@@ -91,12 +96,29 @@ public class ModelBuilder : MonoBehaviour
 
         ApplySelectiveScaling(layers, instantiatedLayers);
         PositionLayers(instantiatedLayers, annParent, ref zPosition, spaceBetweenLayers, ref annDepth);
+
+        modelCreated = true;
+    }
+
+    public bool getModelCreated()
+    {
+        return modelCreated;
+    }
+
+    public GameObject getAnnParent()
+    {
+        return annParent;
+    }
+
+    public void setPixelToUnit(float pixelToUnit)
+    {
+        this.pixelToUnit = pixelToUnit;
     }
 
     GameObject CreateLayerParent(ApiDataFetcher.LayerInfo layer, float zPosition)
     {
         GameObject layerParent = new GameObject(layer.class_name + "Layer");
-        layerParent.transform.localPosition = new Vector3(-5, 1f, zPosition);
+        layerParent.transform.localPosition = new Vector3(-5 * scaleFactor, 1f * scaleFactor, zPosition * scaleFactor);
         return layerParent;
     }
 
@@ -133,7 +155,7 @@ public class ModelBuilder : MonoBehaviour
     {
         int numberOfNeurons = layer.output_shape[1];
         GameObject neuronSystem = Instantiate(prefab, parent: layerParent.transform);
-        neuronSystem.transform.localPosition = new Vector3(0, 3.5f, 0);
+        neuronSystem.transform.localPosition = new Vector3(0, 3.5f * scaleFactor, 0);
 
         ParticleSystem[] particleSystemArray = neuronSystem.GetComponentsInChildren<ParticleSystem>();
 
@@ -155,12 +177,23 @@ public class ModelBuilder : MonoBehaviour
             {
                 neuronSystem.transform.localPosition = new Vector3(0, 0, 0);
                 neuronSystem.transform.rotation = Quaternion.Euler(new Vector3(90, 90, 0));
-                particleRenderer.maxParticleSize = 0.07f;
+                particleRenderer.maxParticleSize = 0.07f * scaleFactor;
+            }
+            else
+            {
+                particleRenderer.maxParticleSize = particleRenderer.maxParticleSize * scaleFactor;
             }
 
             ParticleSystem.Burst burst = new ParticleSystem.Burst(0.0f, numberOfNeurons);
             emissionModule.SetBursts(new ParticleSystem.Burst[] { burst });
+
+            // Adjust the position of each particle
+            var shape = particleSystem.shape;
+            shape.scale = new Vector3(1f * scaleFactor, 1f * scaleFactor, 1f * scaleFactor);
         }
+
+        // Scale the neuron system itself
+        neuronSystem.transform.localScale = new Vector3(neuronSystem.transform.localScale.x * scaleFactor, neuronSystem.transform.localScale.y * scaleFactor, neuronSystem.transform.localScale.z * scaleFactor);
     }
 
     void InstantiateFeatureMaps(ApiDataFetcher.LayerInfo layer, GameObject prefab, GameObject layerParent)
@@ -170,8 +203,8 @@ public class ModelBuilder : MonoBehaviour
             int pixel = layer.output_shape[1];
             int featureMaps = layer.output_shape[3];
             int dimension = Mathf.CeilToInt(Mathf.Sqrt(featureMaps));
-            float spacing = pixel * 0.01f;
-            float boxWidth = pixel * pixelToUnit;
+            float spacing = pixel * 0.01f * scaleFactor;
+            float boxWidth = pixel * pixelToUnit * scaleFactor;
             float totalRowWidth = dimension * boxWidth + (dimension - 1) * spacing;
             float startX = -totalRowWidth / 2 + boxWidth / 2;
 
@@ -180,7 +213,7 @@ public class ModelBuilder : MonoBehaviour
                 int row = i / dimension;
                 int col = i % dimension;
                 GameObject featureMapBox = Instantiate(prefab, parent: layerParent.transform);
-                featureMapBox.transform.localScale = new Vector3(boxWidth, boxWidth, 0.3f);
+                featureMapBox.transform.localScale = new Vector3(boxWidth, boxWidth, 0.3f * scaleFactor);
                 featureMapBox.transform.localPosition = new Vector3(startX + col * (boxWidth + spacing), row * (boxWidth + spacing), 0);
             }
         }
@@ -275,20 +308,20 @@ public class ModelBuilder : MonoBehaviour
 
     void PositionLayers(List<GameObject> instantiatedLayers, GameObject annParent, ref float zPosition, float spaceBetweenLayers, ref float annDepth)
     {
-        float maxDepth = 27f;
+        float maxDepth = 27f * scaleFactor;
         float layerScaleFactor = CalculateScaleFactor(annDepth, maxDepth);
 
-        zPosition = -2f;
+        zPosition = -2f * scaleFactor;
 
         foreach (GameObject layerObject in instantiatedLayers)
         {
             layerObject.transform.SetParent(annParent.transform);
             layerObject.transform.localScale *= layerScaleFactor;
-            layerObject.transform.localPosition = new Vector3(0f, 1f, zPosition - (layerObject.transform.localScale.z / 2f * layerScaleFactor));
+            layerObject.transform.localPosition = new Vector3(0f, 1f * scaleFactor, zPosition - (layerObject.transform.localScale.z / 2f * layerScaleFactor));
             zPosition -= (layerObject.transform.localScale.z * layerScaleFactor + spaceBetweenLayers * layerScaleFactor);
         }
 
-        annDepth -= spaceBetweenLayers;
+        annDepth -= spaceBetweenLayers * scaleFactor;
     }
 
     float CalculateScaleFactor(float annDepth, float maxDepth)
