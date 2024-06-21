@@ -3,26 +3,13 @@ using Meta.XR.MRUtilityKit;
 
 public class NearestSpawnPosition : MonoBehaviour
 {
+    #region Fields
+
     [Tooltip("Prefab to be placed into the scene, or object in the scene to be moved around.")]
     public GameObject spawnObject;
 
     [Tooltip("Maximum number of times to attempt finding a valid position before giving up.")]
-    public int maxIterations = 1000;
-
-    public enum SpawnLocation
-    {
-        Floating,
-        AnySurface,
-        VerticalSurfaces,
-        OnTopOfSurfaces,
-        HangingDown
-    }
-
-    [SerializeField, Tooltip("Attach content to scene surfaces.")]
-    private SpawnLocation spawnLocation = SpawnLocation.Floating;
-
-    [SerializeField, Tooltip("Filter for surface spawning.")]
-    private MRUKAnchor.SceneLabels labels = ~(MRUKAnchor.SceneLabels)0;
+    public int maxIterations = 5;
 
     [SerializeField, Tooltip("Check for overlaps with other colliders.")]
     private bool checkOverlaps = true;
@@ -36,6 +23,10 @@ public class NearestSpawnPosition : MonoBehaviour
     [SerializeField, Tooltip("Clearance distance for valid spawn positions.")]
     private float surfaceClearanceDistance = 0.1f;
 
+    #endregion
+
+    #region Public Methods
+
     /// <summary>
     /// Finds the nearest valid position to spawn the object within the room.
     /// </summary>
@@ -44,118 +35,49 @@ public class NearestSpawnPosition : MonoBehaviour
     /// <returns>The nearest valid position if found; otherwise, null.</returns>
     public Vector3? FindNearestValidPosition(Vector3 targetPosition, GameObject targetObject)
     {
+        // Ensure the MRUK instance and current room are available
         if (MRUK.Instance == null) return null;
 
         MRUKRoom room = MRUK.Instance.GetCurrentRoom();
         if (room == null) return null;
 
+        // Get the bounds of the prefab
         var prefabBounds = Utilities.GetPrefabBounds(spawnObject);
-        float minRadius = 0.0f;
-        const float clearanceDistance = 0.01f;
         float baseOffset = -prefabBounds?.min.y ?? 0.0f;
         float centerOffset = prefabBounds?.center.y ?? 0.0f;
         Bounds adjustedBounds = new();
 
+        // Adjust the bounds based on the prefab size and clearance distance
         if (prefabBounds.HasValue)
         {
-            minRadius = Mathf.Min(-prefabBounds.Value.min.x, -prefabBounds.Value.min.z, prefabBounds.Value.max.x, prefabBounds.Value.max.z);
-            minRadius = Mathf.Max(minRadius, 0f);
-
             var min = prefabBounds.Value.min;
             var max = prefabBounds.Value.max;
-            min.y += clearanceDistance;
+            min.y += surfaceClearanceDistance;
             max.y = Mathf.Max(max.y, min.y);
 
             adjustedBounds.SetMinMax(min, max);
 
+            // Override bounds if specified
             if (overrideBounds > 0)
             {
-                Vector3 center = new Vector3(0f, clearanceDistance, 0f);
-                Vector3 size = new Vector3(overrideBounds * 2f, clearanceDistance * 2f, overrideBounds * 2f); // OverrideBounds represents the extents, not the size
+                Vector3 center = new Vector3(0f, surfaceClearanceDistance, 0f);
+                Vector3 size = new Vector3(overrideBounds * 2f, surfaceClearanceDistance * 2f, overrideBounds * 2f); // OverrideBounds represents the extents, not the size
                 adjustedBounds = new Bounds(center, size);
             }
         }
 
-        Vector3? nearestValidPosition = null;
-        Quaternion? nearestValidRotation = null;
-        float nearestDistance = float.MaxValue;
-
+        // Check for valid spawn positions around the target position
         for (int j = 0; j < maxIterations; ++j)
         {
-            Vector3 spawnPosition = Vector3.zero;
-            Vector3 spawnNormal = Vector3.zero;
-
-            if (spawnLocation == SpawnLocation.Floating)
+            if (TryFindValidPositionOnFloor(targetPosition, targetObject, baseOffset, centerOffset, adjustedBounds, out Vector3 validPosition, out Quaternion validRotation))
             {
-                var randomPos = room.GenerateRandomPositionInRoom(minRadius, true);
-                if (!randomPos.HasValue) break;
-
-                spawnPosition = randomPos.Value;
-            }
-            else
-            {
-                MRUK.SurfaceType surfaceType = 0;
-
-                switch (spawnLocation)
-                {
-                    case SpawnLocation.AnySurface:
-                        surfaceType |= MRUK.SurfaceType.FACING_UP;
-                        surfaceType |= MRUK.SurfaceType.VERTICAL;
-                        surfaceType |= MRUK.SurfaceType.FACING_DOWN;
-                        break;
-                    case SpawnLocation.VerticalSurfaces:
-                        surfaceType |= MRUK.SurfaceType.VERTICAL;
-                        break;
-                    case SpawnLocation.OnTopOfSurfaces:
-                        surfaceType |= MRUK.SurfaceType.FACING_UP;
-                        break;
-                    case SpawnLocation.HangingDown:
-                        surfaceType |= MRUK.SurfaceType.FACING_DOWN;
-                        break;
-                }
-
-                if (room.GenerateRandomPositionOnSurface(surfaceType, minRadius, LabelFilter.FromEnum(labels), out var pos, out var normal))
-                {
-                    spawnPosition = pos + normal * baseOffset;
-                    spawnNormal = normal;
-                    var center = spawnPosition + normal * centerOffset;
-
-                    if (!room.IsPositionInRoom(center)) continue;
-                    if (room.IsPositionInSceneVolume(center)) continue;
-                    if (room.Raycast(new Ray(pos, normal), surfaceClearanceDistance, out _)) continue;
-                }
-            }
-
-            Vector3 directionToTarget = (targetObject.transform.position - spawnPosition).normalized;
-            Quaternion spawnRotation = Quaternion.LookRotation(directionToTarget, spawnNormal);
-
-            if (checkOverlaps && prefabBounds.HasValue)
-            {
-                if (Physics.CheckBox(spawnPosition + spawnRotation * adjustedBounds.center, adjustedBounds.extents, spawnRotation, layerMask, QueryTriggerInteraction.Ignore))
-                {
-                    continue;
-                }
-            }
-
-            float distance = Vector3.Distance(targetPosition, spawnPosition);
-            if (distance < nearestDistance)
-            {
-                nearestDistance = distance;
-                nearestValidPosition = spawnPosition;
-                nearestValidRotation = spawnRotation;
+                spawnObject.transform.position = validPosition;
+                spawnObject.transform.rotation = validRotation;
+                return validPosition;
             }
         }
 
-        if (nearestValidPosition.HasValue)
-        {
-            spawnObject.transform.position = nearestValidPosition.Value;
-            if (nearestValidRotation.HasValue)
-            {
-                spawnObject.transform.rotation = nearestValidRotation.Value;
-            }
-        }
-
-        return nearestValidPosition;
+        return null;
     }
 
     /// <summary>
@@ -166,4 +88,59 @@ public class NearestSpawnPosition : MonoBehaviour
     {
         spawnObject = obj;
     }
+
+    #endregion
+
+    #region Private Methods
+
+    /// <summary>
+    /// Attempts to find a valid spawn position on the floor near the target position.
+    /// </summary>
+    private bool TryFindValidPositionOnFloor(Vector3 targetPosition, GameObject targetObject, float baseOffset, float centerOffset, Bounds adjustedBounds, out Vector3 validPosition, out Quaternion validRotation)
+    {
+        validPosition = Vector3.zero;
+        validRotation = Quaternion.identity;
+
+        MRUKRoom room = MRUK.Instance.GetCurrentRoom();
+        if (room == null || room.FloorAnchor == null)
+        {
+            return false;
+        }
+
+        var floorBounds = room.FloorAnchor.PlaneRect;
+        if (!floorBounds.HasValue)
+        {
+            return false;
+        }
+
+        Vector3 floorPosition = room.FloorAnchor.transform.TransformPoint(new Vector3(
+            Mathf.Clamp(targetPosition.x, floorBounds.Value.min.x, floorBounds.Value.max.x),
+            0,
+            Mathf.Clamp(targetPosition.z, floorBounds.Value.min.y, floorBounds.Value.max.y)
+        ));
+
+        Vector3 directionToTarget = (targetObject.transform.position - floorPosition).normalized;
+        Quaternion rotationToTarget = Quaternion.LookRotation(directionToTarget, Vector3.up);
+
+        if (IsValidSpawnPosition(floorPosition, rotationToTarget, adjustedBounds))
+        {
+            validPosition = floorPosition;
+            validRotation = rotationToTarget;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if the spawn position is valid.
+    /// </summary>
+    private bool IsValidSpawnPosition(Vector3 position, Quaternion rotation, Bounds bounds)
+    {
+        if (!MRUK.Instance.GetCurrentRoom().IsPositionInRoom(position)) return false;
+        if (checkOverlaps && Physics.CheckBox(position + rotation * bounds.center, bounds.extents, rotation, layerMask, QueryTriggerInteraction.Ignore)) return false;
+        return true;
+    }
+
+    #endregion
 }
