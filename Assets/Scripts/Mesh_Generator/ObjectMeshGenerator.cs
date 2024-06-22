@@ -8,6 +8,8 @@ namespace Meta.XR.MRUtilityKit
     {
         private List<GameObject> objectMeshObjects = new List<GameObject>();
 
+        private bool meshrendererEnabled = false;
+
         public void GenerateObjectsMeshes(MRUKRoom room)
         {
             if (room.Anchors == null || room.Anchors.Count == 0)
@@ -58,6 +60,9 @@ namespace Meta.XR.MRUtilityKit
             meshObject.AddComponent<MeshFilter>();
             MeshRenderer meshRenderer = meshObject.AddComponent<MeshRenderer>();
             meshRenderer.material = new Material(Shader.Find("Standard"));
+
+            // Set the MeshRenderer to inactive to make the mesh invisible
+            meshRenderer.enabled = meshrendererEnabled;
 
             return meshObject;
         }
@@ -166,6 +171,17 @@ namespace Meta.XR.MRUtilityKit
         public List<GameObject> GetObjectMeshes()
         {
             return objectMeshObjects;
+        }
+
+        public void setMeshRendererEnabled(bool meshrendererEnabled)
+        {
+            this.meshrendererEnabled = meshrendererEnabled;
+
+            foreach (var objectMeshObject in objectMeshObjects)
+            {
+                MeshRenderer meshRenderer = objectMeshObject.GetComponent<MeshRenderer>();
+                meshRenderer.enabled = meshrendererEnabled;
+            }
         }
     }
 }

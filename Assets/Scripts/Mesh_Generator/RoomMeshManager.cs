@@ -10,6 +10,8 @@ public class RoomMeshManager : MonoBehaviour
     public bool GenerateWalls = true;
     public bool GenerateObjects = true;
 
+    public bool meshrendererEnabled = false;
+
     private FloorMeshGenerator floorMeshGenerator;
     private WallMeshGenerator wallMeshGenerator;
     private ObjectMeshGenerator objectMeshGenerator;
@@ -53,6 +55,11 @@ public class RoomMeshManager : MonoBehaviour
         if (GenerateObjects)
         {
             objectMeshGenerator.GenerateObjectsMeshes(currentRoom);
+        }
+
+        if (meshrendererEnabled)
+        {
+            objectMeshGenerator.setMeshRendererEnabled(true);
         }
     }
 

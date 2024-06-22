@@ -6,6 +6,8 @@ public class WallMeshGenerator : MonoBehaviour
 {
     private List<GameObject> wallMeshObjects = new List<GameObject>();
 
+    private bool meshrendererEnabled = false;
+
     public void GenerateWallsMeshes(MRUKRoom room)
     {
         if (room.WallAnchors == null || room.WallAnchors.Count == 0)
@@ -33,6 +35,9 @@ public class WallMeshGenerator : MonoBehaviour
         meshObject.AddComponent<MeshFilter>();
         MeshRenderer meshRenderer = meshObject.AddComponent<MeshRenderer>();
         meshRenderer.material = new Material(Shader.Find("Standard"));
+
+        // Set the MeshRenderer to inactive to make the mesh invisible
+        meshRenderer.enabled = meshrendererEnabled;
 
         return meshObject;
     }
@@ -75,5 +80,15 @@ public class WallMeshGenerator : MonoBehaviour
     public List<GameObject> GetWallMeshes()
     {
         return wallMeshObjects;
+    }
+
+    public void setMeshRendererEnabled(bool enabled)
+    {
+        meshrendererEnabled = enabled;
+        foreach (var wallMeshObject in wallMeshObjects)
+        {
+            MeshRenderer meshRenderer = wallMeshObject.GetComponent<MeshRenderer>();
+            meshRenderer.enabled = enabled;
+        }
     }
 }
