@@ -131,4 +131,25 @@ public class Network_Canvas_UI : NetworkBehaviour
         SetGameObjectServerRpc(gameObjectId);
         //}
     }
+
+    /// <summary>
+    /// Server-side function to despawn the GameObject this script is attached to.
+    /// </summary>
+    [ServerRpc]
+    public void DespawnSelfServerRpc()
+    {
+        NetworkObject networkObject = GetComponent<NetworkObject>();
+        if (networkObject != null && networkObject.IsSpawned)
+        {
+            networkObject.Despawn();
+        }
+    }
+
+    /// <summary>
+    /// Client-side function to request the despawning of the GameObject this script is attached to.
+    /// </summary>
+    public void RequestDespawnSelf()
+    {
+        DespawnSelfServerRpc();
+    }
 }
