@@ -100,7 +100,6 @@ public class RadialSelection : MonoBehaviour
 
         currentPart = (int)angle * numberofRadialParts / 360;
 
-        Debug.Log(currentPart);
 
         for (int i = 0; i < numberofRadialParts; i++)
         {
