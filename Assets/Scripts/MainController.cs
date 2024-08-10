@@ -1,65 +1,61 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using Unity.Netcode;
+using System.Collections;
 
-public class MainController : MonoBehaviour
+public class MainController : NetworkBehaviour
 {
-    private string apiUrl = "http://192.168.43.93:4999";
+    #region Variables
+    private const string DefaultApiUrl = "http://192.168.43.93:4999";
 
-    // SerializeField attribute makes this field visible in the Unity Editor
     [SerializeField]
     private TextAsset exampleJsonFile;
 
-    private Dictionary<string, string> modelUrls = new Dictionary<string, string>{
-        {"None",""},
-        {"Sequential", "http://192.168.43.93:4999/sequential/layer_info"},
-        {"Autoencoder", "http://192.168.43.93:4999/autoencoder/layer_info"},
-        {"VGG", "http://192.168.43.93:4999/vgg/layer_info"}
+    private readonly Dictionary<string, string> modelUrls = new Dictionary<string, string>
+    {
+        { "Sequential", "http://192.168.43.93:4999/sequential/layer_info" },
+        { "Autoencoder", "http://192.168.43.93:4999/autoencoder/layer_info" },
+        { "VGG", "http://192.168.43.93:4999/vgg/layer_info" }
     };
 
     public TMP_Dropdown modelDropdown;
     public ApiDataFetcher apiDataFetcher;
     public ModelBuilder modelBuilder;
-
-    public ModelSpawner modelspawner;
+    public ModelSpawner modelSpawner;
     public bool useModelSpawner = false;
 
-    void Start()
+    private NetworkVariable<ApiDataFetcher.LayerInfoList> layerInformation = new NetworkVariable<ApiDataFetcher.LayerInfoList>();
+
+    #endregion
+
+    #region Unity Methods
+
+    /// <summary>
+    /// Initializes the dropdown menu and sets the default API URL.
+    /// Starts fetching the layer information from the API.
+    /// </summary>
+    private void Start()
     {
-        Debug.Log("Start method called.");
         InitializeDropdown(modelDropdown);
-        apiDataFetcher.apiUrl = apiUrl;
-        Debug.Log($"API URL set to: {apiUrl}");
+        apiDataFetcher.apiUrl = DefaultApiUrl;
         StartCoroutine(apiDataFetcher.GetLayerInfo(OnSuccess, OnError));
-        Debug.Log("GetLayerInfo method is running.");
     }
 
-    private void InitializeDropdown(TMP_Dropdown dropdown)
-    {
-        Debug.Log("Initializing dropdown with model options.");
-        dropdown.ClearOptions();
-        List<string> options = new List<string>(modelUrls.Keys);
-        dropdown.AddOptions(options);
-        Debug.Log("Dropdown options added.");
-        dropdown.onValueChanged.AddListener(delegate {
-            DropdownValueChanged(dropdown);
-        });
-        Debug.Log("Dropdown value changed listener added.");
-    }
+    #endregion
 
-    void DropdownValueChanged(TMP_Dropdown dropdown)
-    {
-        if (!dropdown.gameObject.activeInHierarchy) return;
+    #region Public Methods
 
-        string selectedModel = dropdown.options[dropdown.value].text;
-        Debug.Log($"Dropdown value changed: {selectedModel}");
-        if (modelUrls.TryGetValue(selectedModel, out string url))
+    /// <summary>
+    /// Changes the selected model for all clients.
+    /// </summary>
+    /// <param name="selectedModel">The selected model name.</param>
+    public void ChangeSelectedModel(string selectedModel)
+    {
+        if (modelUrls.TryGetValue(selectedModel, out var url))
         {
-            apiUrl = url;
-            apiDataFetcher.apiUrl = apiUrl;
-            Debug.Log($"API URL updated to: {apiUrl}");
+            apiDataFetcher.apiUrl = url;
             StartCoroutine(apiDataFetcher.GetLayerInfo(OnSuccess, OnError));
-            Debug.Log("GetLayerInfo method is running for selected model.");
         }
         else
         {
@@ -67,42 +63,115 @@ public class MainController : MonoBehaviour
         }
     }
 
-    void OnSuccess(ApiDataFetcher.LayerInfoList layerInfoList)
-    {
-        Debug.Log("OnSuccess callback called with layer info.");
+    #endregion
 
+    #region Private Methods
+
+    /// <summary>
+    /// Initializes the dropdown menu with model options and sets the event listener for value change.
+    /// </summary>
+    /// <param name="dropdown">The dropdown to initialize.</param>
+    private void InitializeDropdown(TMP_Dropdown dropdown)
+    {
+        dropdown.ClearOptions();
+        var options = new List<string>(modelUrls.Keys);
+        dropdown.AddOptions(options);
+        dropdown.onValueChanged.AddListener(delegate
+        {
+            DropdownValueChanged(dropdown);
+        });
+    }
+
+    /// <summary>
+    /// Handles the event when the dropdown value is changed.
+    /// Fetches the layer information for the selected model.
+    /// </summary>
+    /// <param name="dropdown">The dropdown whose value has changed.</param>
+    private void DropdownValueChanged(TMP_Dropdown dropdown)
+    {
+        if (!dropdown.gameObject.activeInHierarchy)
+            return;
+
+        var selectedModel = dropdown.options[dropdown.value].text;
+        if (modelUrls.TryGetValue(selectedModel, out var url))
+        {
+            apiDataFetcher.apiUrl = url;
+            StartCoroutine(apiDataFetcher.GetLayerInfo(OnSuccess, OnError));
+        }
+        else
+        {
+            Debug.LogError("URL for selected model not found.");
+        }
+    }
+
+    /// <summary>
+    /// Callback for successful API call.
+    /// Triggers the server RPC to change the model.
+    /// </summary>
+    /// <param name="layerInfoList">The list of layer information fetched from the API.</param>
+    private void OnSuccess(ApiDataFetcher.LayerInfoList layerInfoList)
+    {
+        ChangeModelServerRpc(layerInfoList);
+    }
+
+    /// <summary>
+    /// Callback for failed API call.
+    /// Loads example data from file and triggers the server RPC to change the model.
+    /// </summary>
+    /// <param name="errorMessage">The error message from the failed API call.</param>
+    private void OnError(string errorMessage)
+    {
+        ChangeModelServerRpc(LoadExampleDataFromFile());
+    }
+
+    /// <summary>
+    /// Loads example layer information data from the assigned JSON file.
+    /// </summary>
+    /// <returns>The list of layer information loaded from the example file.</returns>
+    private ApiDataFetcher.LayerInfoList LoadExampleDataFromFile()
+    {
+        if (exampleJsonFile != null)
+        {
+            var exampleJson = exampleJsonFile.text;
+            return JsonUtility.FromJson<ApiDataFetcher.LayerInfoList>($"{{\"layers\":{exampleJson}}}");
+        }
+        else
+        {
+            Debug.LogError("Example JSON file not assigned in the editor.");
+            return null;
+        }
+    }
+
+    #endregion
+
+    #region Network Methods
+
+    /// <summary>
+    /// Server RPC to change the model on the server.
+    /// </summary>
+    /// <param name="layerInfoList">The list of layer information for the new model.</param>
+    [ServerRpc(RequireOwnership = false)]
+    private void ChangeModelServerRpc(ApiDataFetcher.LayerInfoList layerInfoList)
+    {
+        ChangeModelClientRpc(layerInfoList);
+    }
+
+    /// <summary>
+    /// Client RPC to change the model on all clients.
+    /// </summary>
+    /// <param name="layerInfoList">The list of layer information for the new model.</param>
+    [ClientRpc]
+    private void ChangeModelClientRpc(ApiDataFetcher.LayerInfoList layerInfoList)
+    {
         if (useModelSpawner)
         {
-            modelspawner.SpawnModel (layerInfoList.layers);
+            modelSpawner.SpawnModel(layerInfoList.layers);
         }
         else
         {
             modelBuilder.InstantiateLayers(layerInfoList.layers);
         }
-        
-        Debug.Log("Layers instantiated successfully.");
     }
 
-    void OnError(string errorMessage)
-    {
-        Debug.LogError($"OnError callback called with message: {errorMessage}");
-        LoadExampleDataFromFile();
-    }
-
-    void LoadExampleDataFromFile()
-    {
-        Debug.Log("Attempting to load example data from file.");
-        if (exampleJsonFile != null)
-        {
-            Debug.Log("Example JSON file assigned.");
-            string exampleJson = exampleJsonFile.text;
-            Debug.Log("Example JSON file read successfully.");
-            ApiDataFetcher.LayerInfoList layerInfoList = JsonUtility.FromJson<ApiDataFetcher.LayerInfoList>("{\"layers\":" + exampleJson + "}");
-            OnSuccess(layerInfoList);
-        }
-        else
-        {
-            Debug.LogError("Example JSON file not assigned in the editor.");
-        }
-    }
+    #endregion
 }
