@@ -545,6 +545,68 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9488368}
   m_CullTransparentMesh: 1
+--- !u!1 &14832179
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 14832181}
+  - component: {fileID: 14832180}
+  - component: {fileID: 14832182}
+  m_Layer: 0
+  m_Name: Player_Movment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &14832180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 14832179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3616badd808572438ea81f43a272f2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  speed: 3
+  ground: {fileID: 1293889457}
+  playerOrientation: {fileID: 2483171111634208319}
+--- !u!4 &14832181
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 14832179}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.4387002, y: 15.310073, z: -3.4986203}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 7
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &14832182
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 14832179}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 990692c9edb7a214d9b122856cf44929, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _controller: {fileID: 7981821531721902809}
+  _axis: 1
 --- !u!1 &19652523
 GameObject:
   m_ObjectHideFlags: 0
@@ -604,9 +666,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 555634682a4551546ad8b97ab4f89db8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 3
-  ground: {fileID: 1293889457}
-  playerOrientation: {fileID: 2483171111634208319}
 --- !u!1 &31500921
 GameObject:
   m_ObjectHideFlags: 0
@@ -35016,6 +35075,7 @@ MonoBehaviour:
   mrcActivationMode: 0
   launchSimultaneousHandsControllersOnStartup: 0
   isInsightPassthroughEnabled: 0
+  shouldBoundaryVisibilityBeSuppressed: 0
   requestBodyTrackingPermissionOnStartup: 1
   requestFaceTrackingPermissionOnStartup: 0
   requestEyeTrackingPermissionOnStartup: 0
@@ -36845,6 +36905,10 @@ PrefabInstance:
     - target: {fileID: 2794131558739967621, guid: 8795c17ce75b84140bae0b731f85993a, type: 3}
       propertyPath: m_Name
       value: Model
+      objectReference: {fileID: 0}
+    - target: {fileID: 2794131558739967622, guid: 8795c17ce75b84140bae0b731f85993a, type: 3}
+      propertyPath: apiUrl
+      value: http://192.168.43.93:4999
       objectReference: {fileID: 0}
     - target: {fileID: 2794131558739967672, guid: 8795c17ce75b84140bae0b731f85993a, type: 3}
       propertyPath: m_RootOrder
@@ -96799,7 +96863,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _hand: {fileID: 504492557989358196}
   _selectOnRelease: 1
-  _indexReleaseSafeguard: {fileID: 9005535730806295290}
+  _safeReleaseThreshold: 0.5
 --- !u!114 &6550176233330369488
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96814,7 +96878,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _hand: {fileID: 504492557601346372}
   _selectOnRelease: 1
-  _indexReleaseSafeguard: {fileID: 9005535731223671754}
+  _safeReleaseThreshold: 0.5
 --- !u!1 &6568795801636871412
 GameObject:
   m_ObjectHideFlags: 0
@@ -96977,7 +97041,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _hand: {fileID: 6996277671387043125}
   _selectOnRelease: 0
-  _indexReleaseSafeguard: {fileID: 856924669986019029}
+  _safeReleaseThreshold: 0.5
 --- !u!114 &6692796171546975069
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96992,7 +97056,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _hand: {fileID: 6996277671510748165}
   _selectOnRelease: 0
-  _indexReleaseSafeguard: {fileID: 856924669564530661}
+  _safeReleaseThreshold: 0.5
 --- !u!95 &6693520339633875499
 Animator:
   serializedVersion: 5
