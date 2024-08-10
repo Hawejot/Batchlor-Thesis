@@ -19,6 +19,7 @@ TagManager:
   - Def
   - Content
   - Floor
+  - NetworkManager
   layers:
   - Default
   - TransparentFX
