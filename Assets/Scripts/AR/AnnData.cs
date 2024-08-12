@@ -61,7 +61,15 @@ public class AnnData : NetworkBehaviour
     /// </summary>
     public void Forward()
     {
-        ShowSolutionServerRpc();
+        if (IsNetworkActive())
+        {
+            ShowSolutionServerRpc();
+        }
+        else
+        {
+            ShowSolution();
+        }
+
     }
 
     /// <summary>
@@ -112,10 +120,12 @@ public class AnnData : NetworkBehaviour
     /// </summary>
     public void TriggerDrawAnn()
     {
-
-        if (IsOwner)
-        {
+        if(IsNetworkActive()) {
             UpdateAnnConfigServerRpc(inputLayerSize, hiddenLayerOneSize, hiddenLayerTwoSize, outputLayerSize, inputs, weights, biases, reluOrSigmoid);
+        }
+        else
+        {
+            UpdateAnnConfig(inputLayerSize, hiddenLayerOneSize, hiddenLayerTwoSize, outputLayerSize, inputs, weights, biases, reluOrSigmoid);
         }
     }
     #endregion
@@ -325,6 +335,31 @@ public class AnnData : NetworkBehaviour
     }
 
     /// <summary>
+    /// Updates the ANN configuration and draws the ANN.
+    /// </summary>
+    /// <param name="inputLayerSize"></param>
+    /// <param name="hiddenLayerOneSize"></param>
+    /// <param name="hiddenLayerTwoSize"></param>
+    /// <param name="outputLayerSize"></param>
+    /// <param name="inputs"></param>
+    /// <param name="weights"></param>
+    /// <param name="biases"></param>
+    /// <param name="activationFunction"></param>
+    private void UpdateAnnConfig(int inputLayerSize, int hiddenLayerOneSize, int hiddenLayerTwoSize, int outputLayerSize, float[] inputs, float[][] weights, float[][] biases, bool activationFunction)
+    {
+        this.inputLayerSize = inputLayerSize;
+        this.hiddenLayerOneSize = hiddenLayerOneSize;
+        this.hiddenLayerTwoSize = hiddenLayerTwoSize;
+        this.outputLayerSize = outputLayerSize;
+        this.inputs = inputs;
+        this.weights = weights;
+        this.biases = biases;
+        this.reluOrSigmoid = activationFunction;
+
+        DrawAnn();
+    }
+
+    /// <summary>
     /// Shows the solution on the server and synchronizes it with clients.
     /// </summary>
     [ServerRpc(RequireOwnership = false)]
@@ -340,6 +375,29 @@ public class AnnData : NetworkBehaviour
     private void ShowSolutionClientRpc()
     {
         annCanvas.DisplayResults();
+    }
+
+
+    /// <summary>
+    /// Shows the solution withoutnetwork synchronization.
+    /// </summary>
+    private void ShowSolution()
+    {
+        annCanvas.DisplayResults();
+    }
+
+    /// <summary>
+    /// Determines whether the network is active by checking if the application
+    /// </summary>
+    /// <returns></returns>
+    private bool IsNetworkActive()
+    {
+        // Find the NetworkManager in the scene
+        NetworkManager networkManager = FindObjectOfType<NetworkManager>();
+
+        // Check if NetworkManager exists and if the network is active
+        return networkManager != null &&
+               (networkManager.IsServer || networkManager.IsClient || networkManager.IsHost);
     }
     #endregion
 }

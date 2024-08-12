@@ -52,11 +52,10 @@ public class Network_Canvas_UI : NetworkBehaviour
     // Start is called before the first frame update
     private void Start()
     {
-        _activeGameObjectId.Value = _InitialValue;
-        if (IsServer)
+        if (IsServer || !IsNetworkConnected())
         {
-            // Initialize the first active GameObject on the server
-            ActivateGameObject(0);
+            _activeGameObjectId.Value = _InitialValue;
+            ActivateGameObject(_InitialValue);
         }
     }
 
@@ -65,10 +64,17 @@ public class Network_Canvas_UI : NetworkBehaviour
     /// This function is triggered by a button.
     /// </summary>
     /// <param name="gameObjectId">The ID of the GameObject to activate.</param>
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     public void SetGameObjectServerRpc(int gameObjectId)
     {
-        _activeGameObjectId.Value = gameObjectId;
+        if (IsNetworkConnected())
+        {
+            _activeGameObjectId.Value = gameObjectId;
+        }
+        else
+        {
+            ActivateGameObjectLocally(gameObjectId);
+        }
     }
 
     /// <summary>
@@ -86,18 +92,24 @@ public class Network_Canvas_UI : NetworkBehaviour
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-        _activeGameObjectId.OnValueChanged += OnActiveGameObjectIdChanged;
-
-        // Ensure the UI state is updated upon spawning
-        if (_activeGameObjectId.Value >= 0 && _activeGameObjectId.Value < GameObjects.Count)
+        if (IsNetworkConnected())
         {
-            SwitchGameObject(_activeGameObjectId.Value);
+            _activeGameObjectId.OnValueChanged += OnActiveGameObjectIdChanged;
+
+            // Ensure the UI state is updated upon spawning
+            if (_activeGameObjectId.Value >= 0 && _activeGameObjectId.Value < GameObjects.Count)
+            {
+                SwitchGameObject(_activeGameObjectId.Value);
+            }
         }
     }
 
     public override void OnNetworkDespawn()
     {
-        _activeGameObjectId.OnValueChanged -= OnActiveGameObjectIdChanged;
+        if (IsNetworkConnected())
+        {
+            _activeGameObjectId.OnValueChanged -= OnActiveGameObjectIdChanged;
+        }
         base.OnNetworkDespawn();
     }
 
@@ -121,27 +133,48 @@ public class Network_Canvas_UI : NetworkBehaviour
     }
 
     /// <summary>
+    /// Activates the GameObject with the specified ID and deactivates others locally.
+    /// </summary>
+    /// <param name="gameObjectId">The ID of the GameObject to activate.</param>
+    private void ActivateGameObjectLocally(int gameObjectId)
+    {
+        _activeGameObjectId.Value = gameObjectId;
+        SwitchGameObject(gameObjectId);
+    }
+
+    /// <summary>
     /// Client-side function to request a change in active GameObject.
     /// </summary>
     /// <param name="gameObjectId">The ID of the GameObject to activate.</param>
     public void RequestSetGameObject(int gameObjectId)
     {
-        //if (IsOwner)
-        //{
-        SetGameObjectServerRpc(gameObjectId);
-        //}
+        if (IsNetworkConnected())
+        {
+            SetGameObjectServerRpc(gameObjectId);
+        }
+        else
+        {
+            ActivateGameObjectLocally(gameObjectId);
+        }
     }
 
     /// <summary>
     /// Server-side function to despawn the GameObject this script is attached to.
     /// </summary>
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     public void DespawnSelfServerRpc()
     {
-        NetworkObject networkObject = GetComponent<NetworkObject>();
-        if (networkObject != null && networkObject.IsSpawned)
+        if (IsNetworkConnected())
         {
-            networkObject.Despawn();
+            NetworkObject networkObject = GetComponent<NetworkObject>();
+            if (networkObject != null && networkObject.IsSpawned)
+            {
+                networkObject.Despawn();
+            }
+        }
+        else
+        {
+            Destroy(gameObject);
         }
     }
 
@@ -150,6 +183,22 @@ public class Network_Canvas_UI : NetworkBehaviour
     /// </summary>
     public void RequestDespawnSelf()
     {
-        DespawnSelfServerRpc();
+        if (IsNetworkConnected())
+        {
+            DespawnSelfServerRpc();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    /// <summary>
+    /// Checks if the network is connected and if the current instance is the server.
+    /// </summary>
+    /// <returns>True if the network is connected and the instance is the server, false otherwise.</returns>
+    private bool IsNetworkConnected()
+    {
+        return NetworkManager.Singleton != null && NetworkManager.Singleton.IsConnectedClient && IsServer;
     }
 }

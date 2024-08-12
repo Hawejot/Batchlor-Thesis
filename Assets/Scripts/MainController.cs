@@ -111,7 +111,15 @@ public class MainController : NetworkBehaviour
     /// <param name="layerInfoList">The list of layer information fetched from the API.</param>
     private void OnSuccess(ApiDataFetcher.LayerInfoList layerInfoList)
     {
-        ChangeModelServerRpc(layerInfoList);
+        if (IsNetworkActive())
+        {
+            ChangeModelServerRpc(layerInfoList);
+        }
+        else
+        {
+            ChangeModel(layerInfoList);
+        }
+        
     }
 
     /// <summary>
@@ -121,7 +129,15 @@ public class MainController : NetworkBehaviour
     /// <param name="errorMessage">The error message from the failed API call.</param>
     private void OnError(string errorMessage)
     {
-        ChangeModelServerRpc(LoadExampleDataFromFile());
+        if (IsNetworkActive())
+        {
+            ChangeModelServerRpc(LoadExampleDataFromFile());
+        }
+        else
+        {
+            ChangeModel(LoadExampleDataFromFile());
+        }
+        
     }
 
     /// <summary>
@@ -171,6 +187,36 @@ public class MainController : NetworkBehaviour
         {
             modelBuilder.InstantiateLayers(layerInfoList.layers);
         }
+    }
+
+    /// <summary>
+    /// Changes the model for single user
+    /// </summary>
+    /// <param name="layerInfoList"></param>
+    private void ChangeModel(ApiDataFetcher.LayerInfoList layerInfoList)
+    {
+        if (useModelSpawner)
+        {
+            modelSpawner.SpawnModel(layerInfoList.layers);
+        }
+        else
+        {
+            modelBuilder.InstantiateLayers(layerInfoList.layers);
+        }
+    }
+
+    /// <summary>
+    /// Determines whether the network is active by checking if the application
+    /// </summary>
+    /// <returns></returns>
+    private bool IsNetworkActive()
+    {
+        // Find the NetworkManager in the scene
+        NetworkManager networkManager = FindObjectOfType<NetworkManager>();
+
+        // Check if NetworkManager exists and if the network is active
+        return networkManager != null &&
+               (networkManager.IsServer || networkManager.IsClient || networkManager.IsHost);
     }
 
     #endregion

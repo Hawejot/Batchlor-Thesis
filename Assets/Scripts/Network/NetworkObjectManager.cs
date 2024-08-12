@@ -41,4 +41,22 @@ public class NetworkObjectManager : NetworkBehaviour
             RequestSpawnNetworkObjectServerRpc(prefabIndex, position, rotation);
         }
     }
+
+    public void SpawnObject(int prefabIndex)
+    {
+        if (prefabIndex > 0 && prefabIndex <= spawnablePrefabs.Length)
+        {
+            (Vector3 position, Quaternion rotation) = gBPP.FindNearestValidPosition(spawnablePrefabs[prefabIndex]);
+
+
+            //Test
+
+            position = new Vector3(0, 0, 0);
+            rotation = new Quaternion(0, 0, 0, 0);
+
+            GameObject prefabToSpawn = spawnablePrefabs[prefabIndex];
+            GameObject spawnedObject = Instantiate(prefabToSpawn, position, rotation);
+
+        }
+    }
 }

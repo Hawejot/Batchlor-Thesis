@@ -12,6 +12,8 @@ public class AR_Main_Menu : MonoBehaviour
 
     public SimpleMatchmaking simpleMatchmaking;
 
+    private bool isConnected = false;
+
     public void MainMenuLogic(int action)
     {
         switch(action)
@@ -31,7 +33,17 @@ public class AR_Main_Menu : MonoBehaviour
             break;
             case 3:
                 Debug.Log("Starting Multiplayer");
-                simpleMatchmaking.StartLobbyButtonStart();
+                if (!isConnected)
+                {
+                    simpleMatchmaking.StartLobbyButtonStart();
+                    isConnected = true;
+                }
+                else
+                {
+                    simpleMatchmaking.DisconnectButton();
+                    isConnected = false;
+                }
+                
             //Multi Player Controller
             break;
             case 4:
