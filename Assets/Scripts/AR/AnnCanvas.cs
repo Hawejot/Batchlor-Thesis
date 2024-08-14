@@ -454,6 +454,10 @@ public class AnnCanvas : MonoBehaviour
     /// <param name="reset">Whether to reset the solution count.</param>
     public void DisplayResults(bool reset = false)
     {
+        //Setting the canvas foe the math to active
+        ResultTextHl1.transform.parent.gameObject.SetActive(true);
+
+
         if (reset)
         {
             SolutionCount = 0;

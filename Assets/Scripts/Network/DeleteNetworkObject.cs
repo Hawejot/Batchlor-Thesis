@@ -8,9 +8,9 @@ public class DeleteNetworkObject : MonoBehaviour
     private NetworkManager _networkManager;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        GameObject networkManagerObject =  GameObject.FindWithTag("NetworkManager");
+        GameObject networkManagerObject = GameObject.FindWithTag("NetworkManager");
         if (networkManagerObject != null)
         {
             _networkManager = networkManagerObject.GetComponent<NetworkManager>();
@@ -25,39 +25,53 @@ public class DeleteNetworkObject : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Function to despawn a given network object
-    /// </summary>
-    /// <param name="networkObjectReference">Reference to the network object to despawn</param>
-    /// <param name="rpcParams">Optional RPC parameters</param>
-    [ServerRpc(RequireOwnership = false)]
-    public void RequestDespawnNetworkObjectServerRpc(NetworkObjectReference networkObjectReference, ServerRpcParams rpcParams = default)
+    public void DespawnObject(GameObject objectReference)
     {
-        if (networkObjectReference.TryGet(out NetworkObject networkObject))
+        if (IsNetworkActive())
         {
-            networkObject.Despawn();
-            Destroy(networkObject.gameObject);
+            // Obtain the NetworkObject and pass its ID to the ServerRpc
+            NetworkObject networkObject = objectReference.GetComponent<NetworkObject>();
+            if (networkObject != null)
+            {
+                RequestDespawnNetworkObjectServerRpc(networkObject.NetworkObjectId);
+            }
+            else
+            {
+                Debug.LogError("The object does not have a NetworkObject component!");
+            }
         }
         else
         {
-            Debug.LogError("Invalid network object to despawn!");
+            Destroy(objectReference);
         }
     }
 
     /// <summary>
-    /// Client function to request despawning a network object
+    /// Function to despawn a given network object on the server.
+    /// Marked as private as it should only be called internally by other methods.
     /// </summary>
-    /// <param name="networkObject">The network object to despawn</param>
-    public void DespawnNetworkObject(NetworkObject networkObject)
+    /// <param name="networkObjectId">The NetworkObjectId of the object to despawn</param>
+    [ServerRpc(RequireOwnership = false)]
+    private void RequestDespawnNetworkObjectServerRpc(ulong networkObjectId)
     {
+        NetworkObject networkObject = NetworkManager.Singleton.SpawnManager.SpawnedObjects[networkObjectId];
         if (networkObject != null)
         {
-            NetworkObjectReference networkObjectReference = networkObject;
-            RequestDespawnNetworkObjectServerRpc(networkObjectReference);
+            networkObject.Despawn();
         }
         else
         {
-            Debug.LogError("Network object is null!");
+            Debug.LogError("Invalid network object ID to despawn!");
         }
+    }
+
+    /// <summary>
+    /// Determines whether the network is active by checking if the application
+    /// </summary>
+    /// <returns></returns>
+    private bool IsNetworkActive()
+    {
+        return _networkManager != null &&
+               (_networkManager.IsServer || _networkManager.IsClient || _networkManager.IsHost);
     }
 }
