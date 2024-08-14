@@ -16,7 +16,7 @@ public class NetworkObjectManager : NetworkBehaviour
     /// <param name="rotation">Rotation to spawn the object.</param>
     /// <param name="rpcParams">Optional RPC parameters.</param>
     [ServerRpc(RequireOwnership = false)]
-    public void RequestSpawnNetworkObjectServerRpc(int prefabIndex, Vector3 position, Quaternion rotation, ServerRpcParams rpcParams = default)
+    private void RequestSpawnNetworkObjectServerRpc(int prefabIndex, Vector3 position, Quaternion rotation, ServerRpcParams rpcParams = default)
     {
         if (prefabIndex < 0 || prefabIndex >= spawnablePrefabs.Length)
         {
@@ -38,7 +38,16 @@ public class NetworkObjectManager : NetworkBehaviour
         if(prefabIndex > 0 && prefabIndex <= spawnablePrefabs.Length)
         {
             (Vector3 position, Quaternion rotation) = gBPP.FindNearestValidPosition(spawnablePrefabs[prefabIndex]);
-            RequestSpawnNetworkObjectServerRpc(prefabIndex, position, rotation);
+
+            if (!IsNetworkActive())
+            {
+                SpawnObject(prefabIndex);
+            }
+            else
+            {
+                RequestSpawnNetworkObjectServerRpc(prefabIndex, position, rotation);
+            }
+
         }
     }
 
@@ -49,14 +58,23 @@ public class NetworkObjectManager : NetworkBehaviour
             (Vector3 position, Quaternion rotation) = gBPP.FindNearestValidPosition(spawnablePrefabs[prefabIndex]);
 
 
-            //Test
-
-            position = new Vector3(0, 0, 0);
-            rotation = new Quaternion(0, 0, 0, 0);
-
             GameObject prefabToSpawn = spawnablePrefabs[prefabIndex];
             GameObject spawnedObject = Instantiate(prefabToSpawn, position, rotation);
 
         }
+    }
+
+    /// <summary>
+    /// Determines whether the network is active by checking if the application
+    /// </summary>
+    /// <returns></returns>
+    private bool IsNetworkActive()
+    {
+        // Find the NetworkManager in the scene
+        NetworkManager networkManager = FindObjectOfType<NetworkManager>();
+
+        // Check if NetworkManager exists and if the network is active
+        return networkManager != null &&
+               (networkManager.IsServer || networkManager.IsClient || networkManager.IsHost);
     }
 }

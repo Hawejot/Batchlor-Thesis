@@ -46,15 +46,20 @@ public class GazeBasedPrefabPlacer : MonoBehaviour
         Ray ray = new Ray(cameraRig.transform.position, cameraRig.transform.forward);
         RaycastHit hit;
 
-        if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
+        // Perform the raycast without using a layer mask
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity))
         {
-            return hit.point;
+            // Check if the hit object is the specified floorObject
+            if (hit.collider.gameObject == floorObject)
+            {
+                return hit.point;  // Return the hit point if it's the floorObject
+            }
         }
-        else
-        {
-            return cameraRig.transform.position + cameraRig.transform.forward * 2f;
-        }
+
+        // If nothing is hit or the hit object is not the floorObject, return a point 2 meters forward from the camera
+        return cameraRig.transform.position + cameraRig.transform.forward * 2f;
     }
+
 
     /// <summary>
     /// Finds the nearest valid position on the floor mesh to place the prefab,

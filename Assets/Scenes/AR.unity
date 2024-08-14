@@ -4884,6 +4884,7 @@ GameObject:
   - component: {fileID: 1237257552}
   - component: {fileID: 1237257554}
   - component: {fileID: 1237257556}
+  - component: {fileID: 1237257557}
   m_Layer: 0
   m_Name: NetworkObjectManager
   m_TagString: Untagged
@@ -4904,7 +4905,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   networkManager: {fileID: 476061910}
-  spawnablePrefabs: []
+  spawnablePrefabs:
+  - {fileID: 8454018981961737410, guid: ec1381df741adf24db7d38b85feb8bd2, type: 3}
+  - {fileID: 6009271829134508563, guid: 3702078a4d89f4349b737606e3e2523a, type: 3}
+  - {fileID: 6622395148276173984, guid: ba58c3e2f74d74545afe522cd9cf84ce, type: 3}
+  - {fileID: 2486084774087874286, guid: 73134bc9ec712e94ba88ad9274d3fc77, type: 3}
+  - {fileID: 5603095025979582302, guid: 0b74a389f68787847b9d85732bce8042, type: 3}
   gBPP: {fileID: 0}
 --- !u!4 &1237257553
 Transform:
@@ -4958,6 +4964,24 @@ MonoBehaviour:
   GenerateWalls: 1
   GenerateObjects: 1
   meshrendererEnabled: 0
+--- !u!114 &1237257557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1237257551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36ce6873c4e285e479dfc18c17409769, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  roomMeshManager: {fileID: 1237257556}
+  cameraRig: {fileID: 2483171112756295497}
+  gridSpacing: 0.2
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!1 &1342752277
 GameObject:
   m_ObjectHideFlags: 0
