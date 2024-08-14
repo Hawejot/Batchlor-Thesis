@@ -23,6 +23,7 @@ public class AR_Main_Menu : MonoBehaviour
             //Open Leanrnig Station Wheel
                 Debug.Log("Open Learning Station");
                 rsIteam.SpawnRadialPart();
+                //rsIteam.setSpawned(true);
                 break;
             case 1:
                SceneManager.LoadScene("MainMenu");

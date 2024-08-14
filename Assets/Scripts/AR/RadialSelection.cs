@@ -8,7 +8,10 @@ using UnityEngine.Events;
 public class RadialSelection : MonoBehaviour
 {
     public OVRInput.Button spawnbutton;
+    public OVRInput.Button despawnButton;
     public OVRInput.Button selectButton;
+
+    public RadialSelection secondaryMenue = null;
 
     [Range(2, 10)]
     public int numberofRadialParts;
@@ -28,7 +31,7 @@ public class RadialSelection : MonoBehaviour
 
     private int currentPart = 0;
 
-    private bool spawned = false;
+    public bool spawned = false;
 
     public void SetSpawnButton(OVRInput.Button spawnbutton)
     {
@@ -38,35 +41,58 @@ public class RadialSelection : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        if (debugBool)
-        {
             SpawnRadialPart();
-        }
+
+            HideSelector();
+
 
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (OVRInput.GetDown(spawnbutton) && spawnbutton != null)
+        if (OVRInput.GetDown(spawnbutton))
         {
-            if (!spawned)
+            if (!spawned && spawnbutton != OVRInput.Button.None)
             {
-                SpawnRadialPart();
+                if(secondaryMenue != null)
+                {
+                    if (!secondaryMenue.spawned)
+                    {
+                        SpawnRadialPart();
+                    }
+                }
+                else
+                {
+                    SpawnRadialPart();
+                }
+                
             }
-            else
+}
+        if (OVRInput.GetDown(despawnButton))
+        {
+            if (spawned)
             {
                 HideSelector();
             }
 
         }
+
+        //update which sclice is selected
         if (spawned)
         {
             GetSelectedRadialPart();
+                radialPartCanvas.gameObject.SetActive(true);
         }
+
+        //Select current scie
         if (OVRInput.GetDown(selectButton))
         {
-            HideAndTriggerSelector();
+            if (spawned)
+            {
+                HideAndTriggerSelector();
+            }
+            
         }
 
     }
@@ -121,6 +147,7 @@ public class RadialSelection : MonoBehaviour
     public void SpawnRadialPart()
     {
         radialPartCanvas.gameObject.SetActive(true);
+
         radialPartCanvas.position = handtransform.position;
         radialPartCanvas.rotation = handtransform.rotation;
 
@@ -136,6 +163,7 @@ public class RadialSelection : MonoBehaviour
 
         icons.Clear();
         spawnedRadialParts.Clear();
+
 
         for (int i = 0; i < numberofRadialParts; i++)
         {
@@ -180,5 +208,11 @@ public class RadialSelection : MonoBehaviour
         }
 
         spawned = true;
+
+    }
+
+    public void setSpawned(bool value)
+    {
+        spawned = value;
     }
 }
