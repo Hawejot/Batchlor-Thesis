@@ -18,7 +18,7 @@ public class ApplyTransform : MonoBehaviour
         if (Object1 == null)
         {
             // Find the GameObject with the name "CentralEyeAnchor"
-            Object1 = GameObject.Find("CentralEyeAnchor");
+            Object1 = GameObject.Find("CenterEyeAnchor");
             if (Object1 == null)
             {
                 Debug.LogError("CentralEyeAnchor not found in the scene.");
