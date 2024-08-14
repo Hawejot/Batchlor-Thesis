@@ -48,10 +48,5 @@ The project is built using the Unity Engine (version 2021.3.30f1) and targets th
 
 Contributions are welcome! Please fork the repository and submit a pull request for any changes or additions you would like to make.
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
 
 *This project is part of a Bachelor thesis submitted to the University of Osnabrück for the degree of Bachelor of Science (B.Sc.) in Cognitive Science.*
