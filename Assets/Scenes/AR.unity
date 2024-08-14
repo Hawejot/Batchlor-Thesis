@@ -6603,7 +6603,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 2056433338}
         m_TargetAssemblyTypeName: AR_Iteam_Selection_Menu, Assembly-CSharp
-        m_MethodName: IteamSelectionMenu
+        m_MethodName: ItemSelectionMenu
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -6632,6 +6632,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca7c7365c35d576418baf7569695f48c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  networkObjectManager: {fileID: 1237257552}
 --- !u!4 &10425771803103920
 Transform:
   m_ObjectHideFlags: 0

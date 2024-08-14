@@ -48,7 +48,7 @@ public class RadialSelection : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (OVRInput.GetDown(spawnbutton))
+        if (OVRInput.GetDown(spawnbutton) && spawnbutton != null)
         {
             if (!spawned)
             {

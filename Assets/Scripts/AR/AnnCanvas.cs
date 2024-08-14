@@ -448,40 +448,49 @@ public class AnnCanvas : MonoBehaviour
     /// Displays the results of the neural network computation.
     /// </summary>
     /// <param name="rest">The rest of the results.</param>
+    /// <summary>
+    /// Displays the results of the neural network computation.
+    /// </summary>
+    /// <param name="reset">Whether to reset the solution count.</param>
     public void DisplayResults(bool reset = false)
     {
-        if(!reset)
+        if (reset)
+        {
+            SolutionCount = 0;
+        }
+        else
         {
             SolutionCount++;
         }
 
-        if(SolutionCount == 0)
+        switch (SolutionCount)
         {
-            ResultTextHl1.SetActive(false);
-            ResultTextHl2.SetActive(false);
-            ResultTextOutput.SetActive(false);
-        }
-        
-        if (SolutionCount > 0)
-        {
-            ResultTextHl1.SetActive(true);
-            ResultTextHl2.SetActive(false);
-            ResultTextOutput.SetActive(false);
-        }
+            case 0:
+                ResultTextHl1.SetActive(false);
+                ResultTextHl2.SetActive(false);
+                ResultTextOutput.SetActive(false);
+                break;
 
-        if (SolutionCount > 1)
-        {
-            ResultTextHl2.SetActive(true);
-            ResultTextOutput.SetActive(false);
+            case 1:
+                ResultTextHl1.SetActive(true);
+                ResultTextHl2.SetActive(false);
+                ResultTextOutput.SetActive(false);
+                break;
 
-        }
+            case 2:
+                ResultTextHl1.SetActive(true);
+                ResultTextHl2.SetActive(true);
+                ResultTextOutput.SetActive(false);
+                break;
 
-        if (SolutionCount > 2)
-        {
-            ResultTextOutput.SetActive(true);
+            default: // case 3 or more
+                ResultTextHl1.SetActive(true);
+                ResultTextHl2.SetActive(true);
+                ResultTextOutput.SetActive(true);
+                break;
         }
-        
     }
+
 
     #endregion
 }

@@ -8,7 +8,7 @@ using Unity.Netcode; // For MLAPI or Netcode for GameObjects (Unity's networking
 /// Manages the selection and spawning of items in an AR environment, 
 /// handling both networked and non-networked scenarios.
 /// </summary>
-public class ARItemSelectionMenu : MonoBehaviour
+public class AR_Iteam_Selection_Menu : MonoBehaviour
 {
     /// <summary>
     /// Reference to the NetworkObjectManager, which handles networked object spawning.
